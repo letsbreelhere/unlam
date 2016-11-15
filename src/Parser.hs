@@ -3,6 +3,7 @@ module Parser where
 import Control.Applicative (Alternative(..))
 import Control.Arrow (first)
 import Control.Monad (guard)
+import Data.Foldable (asum)
 import Types
 
 newtype Parser a = Parser { parse :: String -> Maybe (a, String) }
@@ -30,10 +31,13 @@ char c = Parser $ \s -> do (x:xs) <- pure s
                            pure (x, xs)
 
 oneOf :: (Functor t, Foldable t) => t Char -> Parser Char
-oneOf = foldr (<|>) empty . fmap char
+oneOf = asum . fmap char
+
+skip :: (Functor f) => f a -> f ()
+skip = fmap (const ())
 
 spaces :: Parser ()
-spaces = many (oneOf (" \n\t" :: String)) *> pure ()
+spaces = skip . many $ oneOf [' ', '\n', '\t']
 
 token :: Parser a -> Parser a
 token p = p <* spaces

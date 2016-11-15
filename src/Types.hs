@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, FlexibleInstances, RankNTypes #-}
+{-# LANGUAGE DeriveFunctor, FlexibleInstances, RankNTypes, TypeOperators #-}
 
 module Types where
 
@@ -16,28 +16,32 @@ data Ski f = S
 
 data Fix f = Fix { unFix :: f (Fix f) }
 
-type Natural f g = forall a. f a -> g a
+infixl 0 ~>
+type f ~> g = forall a. f a -> g a
 
--- Maps a natural transformation into `Fix`
-hmap :: Functor g => Natural f g -> Fix f -> Fix g
+hmap :: Functor g => (f ~> g) -> Fix f -> Fix g
 hmap f = Fix . fmap (hmap f) . f . unFix
 
-type Lam' = Fix (Sum App Lam)
+type Lam' = Fix (App :+: Lam)
 
 instance Show (Ski f) where
   show S = "s"
   show K = "k"
   show I = "i"
 
-data Sum f g a = InL (f a) | InR (g a)
+infixl 9 :+:
+data (f :+: g) a = InL (f a) | InR (g a)
   deriving (Functor)
 
-mapR :: (r a -> r' a) -> Sum l r a -> Sum l r' a
-mapR natl x = case x of
-  InL l -> InL l
-  InR r -> InR (natl r)
+(<+>) :: (f a -> b) -> (g a -> b) -> (f :+: g) a -> b
+(h <+> k) sum = case sum of
+  InL fa -> h fa
+  InR gb -> k gb
 
-type LamWithSki = Fix (Sum App (Sum Lam Ski))
+mapR :: (r ~> r') -> (l :+: r ~> l :+: r')
+mapR natl = InL <+> (InR . natl)
+
+type LamWithSki = Fix (App :+: (Lam :+: Ski))
 
 app :: Lam' -> Lam' -> Lam'
 app l r = Fix (InL $ App l r)
