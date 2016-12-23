@@ -34,7 +34,7 @@ removePoint v =
                     | v == v' -> mkSki I
                     | otherwise -> mkSki K <@> mkLam lambda
                 Abs v' e
-                    | v == v' -> error "Bad term! (this should be impossible)"
+                    | v == v' -> error "Failure: encountered nested identical variables. (Need alpha-conversion to avoid this)"
                     | otherwise -> mkSki K <@> removePoint v' e
         InR (InR s) -> mkSki K <@> mkSki s
 
@@ -51,6 +51,12 @@ main = hSetBuffering stdout NoBuffering >> loop
         putStrLn $
             maybe
                 "Failed to parse."
-                (("=> " ++) . showLamWithSki . pointfree . hmap (mapR InL))
+                (display . pointfree . inject)
                 term
         loop
+
+    inject :: Lam' -> LamWithSki
+    inject = hmap (mapR InL)
+
+    display :: LamWithSki -> String
+    display = ("=> " ++) . showLamWithSki
