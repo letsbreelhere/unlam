@@ -6,4 +6,4 @@ expressions (using a pseudo-version of
 into point-free SKI-calculus expressions. The algorithm is reasonably
 simple, but requires several AST traversals to get right, so I used it
 as an exercise in working with `Fix` and (a hacky, self-built version
-of) *datatypes a la carte*-style functorial construction of ADTs.
+of) *Datatypes à la Carte*-style functorial construction of ADTs.
