@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFunctor, FlexibleInstances, RankNTypes,
-  TypeOperators, LambdaCase #-}
+  TypeOperators, LambdaCase, PatternSynonyms #-}
 
 module Types where
 
@@ -30,7 +30,6 @@ cata
 cata alg = alg . fmap (cata alg) . unFix
 
 infixl 0 ~>
-
 type f ~> g = forall a. f a -> g a
 
 hmap
@@ -63,6 +62,11 @@ mapR natl = InL <+> (InR . natl)
 
 type LamWithSki = Fix (App :+: (Lam :+: Ski))
 
+-- Pattern helpers for LamWithSki
+pattern l :<@> r = InL (App l r)
+pattern Lam x = InR (InL x)
+pattern Ski x = InR (InR x)
+
 app :: Lam' -> Lam' -> Lam'
 app l r = Fix (InL $ App l r)
 
@@ -91,9 +95,7 @@ showLamWithSki :: LamWithSki -> String
 showLamWithSki =
     cata $
     \case
-        InL (App l r) -> '`' : l ++ r
-        InR (InL lambda) ->
-            case lambda of
-                Var v _ -> [v]
-                Abs v e -> '^' : v : '.' : e
-        InR (InR ski) -> show ski
+        l :<@> r -> '`' : l ++ r
+        Lam (Var v _) -> [v]
+        Lam (Abs v e) -> '^' : v : '.' : e
+        Ski s -> show s

@@ -23,48 +23,43 @@ import System.IO (hSetBuffering, stdout, BufferMode(..))
 import Types
 import Parser
 import Control.Monad (replicateM)
-import Debug.Trace (trace)
 
 removePoint :: Char -> LamWithSki -> LamWithSki
 removePoint v =
     cata $
     \case
-        InL (App e e') -> mkSki S <@> e <@> e'
-        InR (InL lambda) ->
-            case lambda of
-                Var v' _
+        e :<@> e' -> mkSki S <@> e <@> e'
+        Lam l@(Var v' _)
                     | v == v' -> mkSki I
-                    | otherwise -> mkSki K <@> mkLam lambda
-                Abs v' e
-                    | v == v' -> error "Failure: encountered nested identical variables. (Need alpha-conversion to avoid this)"
-                    | otherwise -> mkSki K <@> removePoint v' e
-        InR (InR s) -> mkSki K <@> mkSki s
+                    | otherwise -> mkSki K <@> mkLam l
+        Lam (Abs v' e)
+          | v == v' -> error "Failure: encountered nested identical variables. (Need alpha-conversion to avoid this)"
+          | otherwise -> mkSki K <@> removePoint v' e
+        Ski s -> mkSki K <@> mkSki s
 
 pointfree :: LamWithSki -> LamWithSki
-pointfree (Fix (InR (InL (Abs v e)))) = removePoint v e
+pointfree (Fix (Lam (Abs v e))) = removePoint v e
 pointfree lws = lws
 
 -- Convert vars named c to c' and mark them.
 mark :: Char -> Char -> LamWithSki -> LamWithSki
 mark c c' = cata $ \case
-  InR (InL (Var x False)) | c == x -> Fix (InR $ InL $ Var c' True)
+  Lam (Var v False) | v == c -> mkVar c' True
   expr -> Fix expr
 
 inject :: Lam' -> LamWithSki
 inject = hmap (mapR InL)
 
-produceFresh :: Int -> LamWithSki -> (Int, LamWithSki)
-produceFresh _ = cata $ \case
-  InL (App (k, e) (m, e')) -> (max k m, e <@> e')
-  InR (InR s) -> (0, mkSki (fmap snd s))
-  InR (InL lambda) ->
-      case lambda of
-        Abs v (n, e) -> do
-          let n' = n + 1
-          let v' = ['a'..] !! n'
-          let e' = mark v v' e
-          (n', mkLam $ Abs v' e')
-        Var v reduced -> (0, mkVar v reduced)
+alphaConversion :: LamWithSki -> (Int, LamWithSki)
+alphaConversion = cata $ \case
+  (k, e) :<@> (m, e') -> (max k m, e <@> e')
+  Ski s -> (0, mkSki (fmap snd s))
+  Lam (Abs v (n, e)) -> do
+    let n' = n + 1
+    let v' = ['a'..] !! n'
+    let e' = mark v v' e
+    (n', mkLam $ Abs v' e')
+  Lam (Var v reduced) -> (0, mkVar v reduced)
 
 main :: IO ()
 main = hSetBuffering stdout NoBuffering >> loop
@@ -80,9 +75,7 @@ main = hSetBuffering stdout NoBuffering >> loop
         loop
 
     transform :: LamWithSki -> LamWithSki
-    transform lws = do
-      let (n, intermediate) = produceFresh 0 lws
-      trace ("Reduced: " ++ showLamWithSki intermediate) $ pointfree intermediate
+    transform = pointfree . snd . alphaConversion
 
     display :: LamWithSki -> String
     display = ("=> " ++) . showLamWithSki
