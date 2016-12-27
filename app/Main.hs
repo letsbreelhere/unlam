@@ -19,7 +19,9 @@ An example (computing the B combinator):
 
 module Main where
 
-import System.IO (hSetBuffering, stdout, BufferMode(..))
+import Control.Monad.Trans (liftIO)
+import System.Console.Haskeline (getInputLine)
+import qualified System.Console.Haskeline as Haskeline
 import Types
 import Parser
 import Control.Monad (replicateM)
@@ -62,17 +64,14 @@ alphaConversion = cata $ \case
   Lam (Var v reduced) -> (0, mkVar v reduced)
 
 main :: IO ()
-main = hSetBuffering stdout NoBuffering >> loop
+main = Haskeline.runInputT Haskeline.defaultSettings loop
   where
     loop = do
-        putStr "> "
-        term <- parse' lam <$> getLine
-        putStrLn $
-            maybe
-                "Failed to parse."
-                (display . transform . inject)
-                term
-        loop
+      input <- getInputLine "> "
+      let term = parse' lam =<< input
+      liftIO . putStrLn $
+        maybe "Failed to parse." (display . transform . inject) term
+      loop
 
     transform :: LamWithSki -> LamWithSki
     transform = pointfree . snd . alphaConversion
