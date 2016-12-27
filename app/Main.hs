@@ -24,20 +24,21 @@ import System.Console.Haskeline (getInputLine)
 import qualified System.Console.Haskeline as Haskeline
 import Types
 import Parser
-import Control.Monad (replicateM)
 
 removePoint :: Char -> LamWithSki -> LamWithSki
 removePoint v =
-    cata $
-    \case
-        e :<@> e' -> mkSki S <@> e <@> e'
-        Lam l@(Var v' _)
-                    | v == v' -> mkSki I
-                    | otherwise -> mkSki K <@> mkLam l
-        Lam (Abs v' e)
-          | v == v' -> error "Failure: encountered nested identical variables (this should be impossible with alpha-conversion)"
-          | otherwise -> mkSki K <@> removePoint v' e
-        Ski s -> mkSki K <@> mkSki s
+  cata $
+  \case
+    e :<@> e' -> mkSki S <@> e <@> e'
+    Lam l@(Var v' _)
+      | v == v' -> mkSki I
+      | otherwise -> mkSki K <@> mkLam l
+    Lam (Abs v' e)
+      | v == v' ->
+        error
+          "Failure: encountered nested identical variables (this should be impossible with alpha-conversion)"
+      | otherwise -> mkSki K <@> removePoint v' e
+    Ski s -> mkSki K <@> mkSki s
 
 pointfree :: LamWithSki -> LamWithSki
 pointfree (Fix (Lam (Abs v e))) = removePoint v e

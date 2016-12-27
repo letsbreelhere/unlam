@@ -4,58 +4,58 @@
 module Types where
 
 data App f =
-    App f
-        f
-     deriving (Functor)
+  App f
+      f
+   deriving (Functor)
 
 data Lam f
   = Abs Char
-          f
-  | Var Char Bool
-  deriving (Functor)
+        f
+  | Var Char
+        Bool
+   deriving (Functor)
 
 data Ski f
-    = S
-    | K
-    | I
-    deriving (Functor)
+  = S
+  | K
+  | I
+   deriving (Functor)
 
 data Fix f = Fix
-    { unFix :: f (Fix f)
-    }
+  { unFix :: f (Fix f)
+  }
 
 cata
-    :: Functor f
-    => (f a -> a) -> Fix f -> a
+  :: Functor f
+  => (f a -> a) -> Fix f -> a
 cata alg = alg . fmap (cata alg) . unFix
 
 infixl 0 ~>
+
 type f ~> g = forall a. f a -> g a
 
 hmap
-    :: Functor g
-    => (f ~> g) -> Fix f -> Fix g
+  :: Functor g
+  => (f ~> g) -> Fix f -> Fix g
 hmap f = Fix . fmap (hmap f) . f . unFix
 
 type Lam' = Fix (App :+: Lam)
 
 instance Show (Ski f) where
-    show S = "s"
-    show K = "k"
-    show I = "i"
+  show S = "s"
+  show K = "k"
+  show I = "i"
 
 infixl 9 :+:
 
 data (f :+: g) a
-    = InL (f a)
-    | InR (g a)
-     deriving (Functor)
+  = InL (f a)
+  | InR (g a)
+   deriving (Functor)
 
 (<+>) :: (f a -> b) -> (g a -> b) -> (f :+: g) a -> b
-(h <+> k) sum =
-    case sum of
-        InL fa -> h fa
-        InR gb -> k gb
+(l <+> _) (InL fa) = l fa
+(_ <+> r) (InR gb) = r gb
 
 mapR :: (r ~> r') -> (l :+: r ~> l :+: r')
 mapR natl = InL <+> (InR . natl)
@@ -67,6 +67,7 @@ pattern l :<@> r = InL (App l r)
 pattern Lam x = InR (InL x)
 pattern Ski x = InR (InR x)
 
+-- Smart constructors for LamWithSki
 app :: Lam' -> Lam' -> Lam'
 app l r = Fix (InL $ App l r)
 
@@ -93,9 +94,9 @@ l <@> r = Fix . InL $ l `App` r
 
 showLamWithSki :: LamWithSki -> String
 showLamWithSki =
-    cata $
-    \case
-        l :<@> r -> '`' : l ++ r
-        Lam (Var v _) -> [v]
-        Lam (Abs v e) -> '^' : v : '.' : e
-        Ski s -> show s
+  cata $
+  \case
+    l :<@> r -> '`' : l ++ r
+    Lam (Var v _) -> [v]
+    Lam (Abs v e) -> '^' : v : '.' : e
+    Ski s -> show s
