@@ -33,7 +33,7 @@ removePoint v =
                     | v == v' -> mkSki I
                     | otherwise -> mkSki K <@> mkLam l
         Lam (Abs v' e)
-          | v == v' -> error "Failure: encountered nested identical variables. (Need alpha-conversion to avoid this)"
+          | v == v' -> error "Failure: encountered nested identical variables (this should be impossible with alpha-conversion)"
           | otherwise -> mkSki K <@> removePoint v' e
         Ski s -> mkSki K <@> mkSki s
 
