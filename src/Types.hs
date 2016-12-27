@@ -9,16 +9,16 @@ data App f =
      deriving (Functor)
 
 data Lam f
-    = Abs Char
+  = Abs Char
           f
-    | Var Char
-     deriving (Functor)
+  | Var Char Bool
+  deriving (Functor)
 
 data Ski f
     = S
     | K
     | I
-     deriving (Functor)
+    deriving (Functor)
 
 data Fix f = Fix
     { unFix :: f (Fix f)
@@ -67,7 +67,7 @@ app :: Lam' -> Lam' -> Lam'
 app l r = Fix (InL $ App l r)
 
 var :: Char -> Lam'
-var c = Fix (InR $ Var c)
+var c = Fix (InR $ Var c False)
 
 abstr :: Char -> Lam' -> Lam'
 abstr v e = Fix (InR $ Abs v e)
@@ -81,6 +81,9 @@ mkSki = Fix . InR . InR
 mkAbs :: Char -> LamWithSki -> LamWithSki
 mkAbs v e = mkLam $ Abs v e
 
+mkVar :: Char -> Bool -> LamWithSki
+mkVar c mark = Fix (InR $ InL $ Var c mark)
+
 (<@>) :: LamWithSki -> LamWithSki -> LamWithSki
 l <@> r = Fix . InL $ l `App` r
 
@@ -91,6 +94,6 @@ showLamWithSki =
         InL (App l r) -> '`' : l ++ r
         InR (InL lambda) ->
             case lambda of
-                Var v -> [v]
+                Var v _ -> [v]
                 Abs v e -> '^' : v : '.' : e
         InR (InR ski) -> show ski
