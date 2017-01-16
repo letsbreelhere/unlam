@@ -20,6 +20,7 @@ An example (computing the B combinator):
 module Main where
 
 import Control.Monad.Trans (liftIO)
+import Data.Functor.Foldable (Fix(..), cata)
 import System.Console.Haskeline (getInputLine)
 import qualified System.Console.Haskeline as Haskeline
 import Types
@@ -30,19 +31,19 @@ removePoint v =
   cata $
   \case
     e :<@> e' -> mkSki S <@> e <@> e'
-    Lam l@(Var v' _)
+    Lam (Var v' _)
       | v == v' -> mkSki I
-      | otherwise -> mkSki K <@> mkLam l
     Lam (Abs v' e)
       | v == v' ->
         error
           "Failure: encountered nested identical variables (this should be impossible with alpha-conversion)"
       | otherwise -> mkSki K <@> removePoint v' e
-    Ski s -> mkSki K <@> mkSki s
+    l -> mkSki K <@> Fix l
 
 pointfree :: LamWithSki -> LamWithSki
-pointfree (Fix (Lam (Abs v e))) = removePoint v e
-pointfree lws = lws
+pointfree = cata $ \case
+  Lam (Abs v e) -> removePoint v e
+  lws -> Fix lws
 
 -- Convert vars named c to c' and mark them.
 mark :: Char -> Char -> LamWithSki -> LamWithSki
@@ -68,11 +69,14 @@ main :: IO ()
 main = Haskeline.runInputT Haskeline.defaultSettings loop
   where
     loop = do
-      input <- getInputLine "> "
-      let term = parse' lam =<< input
-      liftIO . putStrLn $
-        maybe "Failed to parse." (display . transform . inject) term
-      loop
+      inputMay <- getInputLine "> "
+      case inputMay of
+        Nothing -> return ()
+        Just input -> do
+          let term = parse' lam input
+          liftIO . putStrLn $
+            maybe ("Failed to parse." ++ show input) (display . transform . inject) term
+          loop
 
     transform :: LamWithSki -> LamWithSki
     transform = pointfree . snd . alphaConversion

@@ -1,7 +1,12 @@
 {-# LANGUAGE DeriveFunctor, FlexibleInstances, RankNTypes,
-  TypeOperators, LambdaCase, PatternSynonyms #-}
+  TypeOperators, LambdaCase, PatternSynonyms, MultiParamTypeClasses, RankNTypes #-}
 
 module Types where
+
+import Data.Functor.Foldable (Fix(..), cata)
+
+unFix :: Fix f -> f (Fix f)
+unFix (Fix x) = x
 
 data App f =
   App f
@@ -21,15 +26,6 @@ data Ski f
   | I
    deriving (Functor)
 
-data Fix f = Fix
-  { unFix :: f (Fix f)
-  }
-
-cata
-  :: Functor f
-  => (f a -> a) -> Fix f -> a
-cata alg = alg . fmap (cata alg) . unFix
-
 infixl 0 ~>
 
 type f ~> g = forall a. f a -> g a
@@ -40,6 +36,15 @@ hmap
 hmap f = Fix . fmap (hmap f) . f . unFix
 
 type Lam' = Fix (App :+: Lam)
+
+class Inject i o where
+  inj :: i -> o
+
+instance Inject (f a) ((f :+: g) a) where
+  inj = InL
+
+instance Inject (g a) ((f :+: g) a) where
+  inj = InR
 
 instance Show (Ski f) where
   show S = "s"
