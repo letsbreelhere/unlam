@@ -19,6 +19,7 @@ An example (computing the B combinator):
 
 module Main where
 
+import Control.Natural
 import Control.Monad.Trans (liftIO)
 import Data.Functor.Foldable (Fix(..), cata)
 import System.Console.Haskeline (getInputLine)
@@ -52,7 +53,7 @@ mark c c' = cata $ \case
   expr -> Fix expr
 
 inject :: Lam' -> LamWithSki
-inject = hmap (mapR InL)
+inject = fixMap (mapRight InL)
 
 alphaConversion :: LamWithSki -> (Int, LamWithSki)
 alphaConversion = cata $ \case

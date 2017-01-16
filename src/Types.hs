@@ -26,25 +26,7 @@ data Ski f
   | I
    deriving (Functor)
 
-infixl 0 ~>
-
-type f ~> g = forall a. f a -> g a
-
-hmap
-  :: Functor g
-  => (f ~> g) -> Fix f -> Fix g
-hmap f = Fix . fmap (hmap f) . f . unFix
-
 type Lam' = Fix (App :+: Lam)
-
-class Inject i o where
-  inj :: i -> o
-
-instance Inject (f a) ((f :+: g) a) where
-  inj = InL
-
-instance Inject (g a) ((f :+: g) a) where
-  inj = InR
 
 instance Show (Ski f) where
   show S = "s"
@@ -58,12 +40,6 @@ data (f :+: g) a
   | InR (g a)
    deriving (Functor)
 
-(<+>) :: (f a -> b) -> (g a -> b) -> (f :+: g) a -> b
-(l <+> _) (InL fa) = l fa
-(_ <+> r) (InR gb) = r gb
-
-mapR :: (r ~> r') -> (l :+: r ~> l :+: r')
-mapR natl = InL <+> (InR . natl)
 
 type LamWithSki = Fix (App :+: (Lam :+: Ski))
 

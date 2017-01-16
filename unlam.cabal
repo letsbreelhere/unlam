@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Types
                      , Parser
+                     , Control.Natural
   build-depends:       base >= 4.7 && < 5
                      , recursion-schemes
   default-language:    Haskell2010
