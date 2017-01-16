@@ -55,15 +55,16 @@ mark c c' = cata $ \case
 inject :: Lam' -> LamWithSki
 inject = fixMap (mapRight InL)
 
-alphaConversion :: LamWithSki -> (Int, LamWithSki)
-alphaConversion = cata $ \case
+-- `cata` here accumulates a fresh variable store which we use to convert each
+-- lambda var we encounter from the bottom up.
+alphaConvert :: LamWithSki -> LamWithSki
+alphaConvert = snd . cata $ \case
   (k, e) :<@> (m, e') -> (max k m, e <@> e')
   Ski s -> (0, mkSki (fmap snd s))
   Lam (Abs v (n, e)) -> do
-    let n' = n + 1
-    let v' = ['a'..] !! n'
+    let v' = ['a'..] !! n
     let e' = mark v v' e
-    (n', mkLam $ Abs v' e')
+    (n+1, mkLam $ Abs v' e')
   Lam (Var v reduced) -> (0, mkVar v reduced)
 
 main :: IO ()
@@ -80,7 +81,7 @@ main = Haskeline.runInputT Haskeline.defaultSettings loop
           loop
 
     transform :: LamWithSki -> LamWithSki
-    transform = pointfree . snd . alphaConversion
+    transform = pointfree . alphaConvert
 
     display :: LamWithSki -> String
     display = ("=> " ++) . showLamWithSki
