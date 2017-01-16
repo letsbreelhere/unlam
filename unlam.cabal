@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.15.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -8,7 +8,7 @@ synopsis:            Lambda calculus toy
 description:         Please see README.md
 homepage:            https://github.com/letsbreelhere/unlam#readme
 bug-reports:         https://github.com/letsbreelhere/unlam/issues
-license:             Public Domain
+license:             PublicDomain
 license-file:        LICENSE
 author:              Bree Elle Gardner
 maintainer:          letsbreelhere@gmail.com

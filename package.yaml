@@ -6,7 +6,7 @@ category: Web
 author: Bree Elle Gardner
 maintainer: letsbreelhere@gmail.com
 copyright: 2016 Bree Elle Gardner
-license: Public Domain
+license: PublicDomain
 github: letsbreelhere/unlam
 library:
   source-dirs: src

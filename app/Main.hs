@@ -58,7 +58,10 @@ inject = fixMap (mapRight InL)
 -- `cata` here accumulates a fresh variable store which we use to convert each
 -- lambda var we encounter from the bottom up.
 alphaConvert :: LamWithSki -> LamWithSki
-alphaConvert = snd . cata $ \case
+alphaConvert = snd . alphaConvert'
+
+alphaConvert' :: LamWithSki -> (Int, LamWithSki)
+alphaConvert' = cata $ \case
   (k, e) :<@> (m, e') -> (max k m, e <@> e')
   Ski s -> (0, mkSki (fmap snd s))
   Lam (Abs v (n, e)) -> do
