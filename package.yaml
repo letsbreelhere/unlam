@@ -1,0 +1,45 @@
+name: unlam
+version: '0.1.0.0'
+synopsis: Lambda calculus toy
+description: Please see README.md
+category: Web
+author: Bree Elle Gardner
+maintainer: letsbreelhere@gmail.com
+copyright: 2016 Bree Elle Gardner
+license: Public Domain
+github: letsbreelhere/unlam
+library:
+  source-dirs: src
+  exposed-modules:
+  - Types
+  - Parser
+  - Control.Natural
+  dependencies:
+  - base >=4.7 && <5
+  - recursion-schemes
+executables:
+  unlam:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -Wall
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - unlam
+    - haskeline
+    - mtl
+    - recursion-schemes
+tests:
+  unlam-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - unlam
