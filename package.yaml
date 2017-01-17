@@ -10,10 +10,6 @@ license: PublicDomain
 github: letsbreelhere/unlam
 library:
   source-dirs: src
-  exposed-modules:
-  - Types
-  - Parser
-  - Control.Natural
   dependencies:
   - base >=4.7 && <5
   - recursion-schemes
