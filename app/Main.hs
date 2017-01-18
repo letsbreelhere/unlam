@@ -53,13 +53,13 @@ mark c c' = cata $ \case
   expr -> Fix expr
 
 inject :: Lam' -> LamWithSki
-inject = fixMap (mapRight InL)
+inject = fixMap (mapLeft InL)
 
--- `cata` here accumulates a fresh variable store which we use to convert each
--- lambda var we encounter from the bottom up.
 alphaConvert :: LamWithSki -> LamWithSki
 alphaConvert = snd . alphaConvert'
 
+-- `cata` here accumulates a fresh variable store which we use to convert each
+-- lambda var we encounter from the bottom up.
 alphaConvert' :: LamWithSki -> (Int, LamWithSki)
 alphaConvert' = cata $ \case
   (k, e) :<@> (m, e') -> (max k m, e <@> e')
@@ -83,8 +83,8 @@ main = Haskeline.runInputT Haskeline.defaultSettings loop
             maybe ("Failed to parse." ++ show input) (display . transform . inject) term
           loop
 
-    transform :: LamWithSki -> LamWithSki
-    transform = pointfree . alphaConvert
+    transform :: LamWithSki -> Maybe SkiTree
+    transform = extractLeft . pointfree . alphaConvert
 
-    display :: LamWithSki -> String
-    display = ("=> " ++) . showLamWithSki
+    display :: Maybe SkiTree -> String
+    display = ("=> " ++) . maybe "Input was not a combinator" showSkiTree

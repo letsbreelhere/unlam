@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveFunctor, FlexibleInstances, RankNTypes,
-  TypeOperators, LambdaCase, PatternSynonyms, MultiParamTypeClasses, RankNTypes #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, FlexibleInstances,
+  RankNTypes, TypeOperators, LambdaCase, PatternSynonyms,
+  MultiParamTypeClasses, RankNTypes #-}
 
 module Types where
 
@@ -11,22 +12,20 @@ unFix (Fix x) = x
 data App f =
   App f
       f
-   deriving (Functor)
+   deriving (Functor, Foldable, Traversable)
 
 data Lam f
   = Abs Char
         f
   | Var Char
         Bool
-   deriving (Functor)
+  deriving (Functor, Foldable, Traversable)
 
 data Ski f
   = S
   | K
   | I
-   deriving (Functor)
-
-type Lam' = Fix (App :+: Lam)
+  deriving (Functor, Foldable, Traversable)
 
 instance Show (Ski f) where
   show S = "s"
@@ -38,17 +37,16 @@ infixl 9 :+:
 data (f :+: g) a
   = InL (f a)
   | InR (g a)
-   deriving (Functor)
+  deriving (Functor, Foldable, Traversable)
 
+type Lam' = Fix (App :+: Lam)
+type SkiTree = Fix (App :+: Ski)
+type LamWithSki = Fix ((App :+: Ski) :+: Lam)
 
-type LamWithSki = Fix (App :+: (Lam :+: Ski))
+pattern l :<@> r = InL (InL (App l r))
+pattern Lam x = InR x
+pattern Ski x = InL (InR x)
 
--- Pattern helpers for LamWithSki
-pattern l :<@> r = InL (App l r)
-pattern Lam x = InR (InL x)
-pattern Ski x = InR (InR x)
-
--- Smart constructors for LamWithSki
 app :: Lam' -> Lam' -> Lam'
 app l r = Fix (InL $ App l r)
 
@@ -59,19 +57,26 @@ abstr :: Char -> Lam' -> Lam'
 abstr v e = Fix (InR $ Abs v e)
 
 mkLam :: Lam LamWithSki -> LamWithSki
-mkLam = Fix . InR . InL
+mkLam = Fix . InR
 
 mkSki :: Ski LamWithSki -> LamWithSki
-mkSki = Fix . InR . InR
+mkSki = Fix . InL . InR
 
 mkAbs :: Char -> LamWithSki -> LamWithSki
 mkAbs v e = mkLam $ Abs v e
 
 mkVar :: Char -> Bool -> LamWithSki
-mkVar c mark = Fix (InR $ InL $ Var c mark)
+mkVar c mark = mkLam (Var c mark)
 
 (<@>) :: LamWithSki -> LamWithSki -> LamWithSki
-l <@> r = Fix . InL $ l `App` r
+l <@> r = Fix . InL . InL $ l `App` r
+
+showSkiTree :: SkiTree -> String
+showSkiTree =
+  cata $
+  \case
+    InL (App l r) -> '`' : l ++ r
+    InR s -> show s
 
 showLamWithSki :: LamWithSki -> String
 showLamWithSki =
