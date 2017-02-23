@@ -8,34 +8,41 @@ maintainer: letsbreelhere@gmail.com
 copyright: 2016 Bree Elle Gardner
 license: PublicDomain
 github: letsbreelhere/unlam
-library:
-  source-dirs: src
-  dependencies:
+
+default-extensions:
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveTraversable
+  - FlexibleInstances
+  - LambdaCase
+  - PatternSynonyms
+  - RankNTypes
+  - TypeOperators
+
+dependencies:
   - base >=4.7 && <5
+  - haskeline
+  - mtl
   - recursion-schemes
+
+source-dirs:
+  - app
+  - src
+
+ghc-options:
+  - -Wall
+  - -fno-warn-overlapping-patterns
+  - -threaded
+  - -rtsopts
+  - -with-rtsopts=-N
+
 executables:
-  unlam:
-    main: Main.hs
-    source-dirs: app
-    ghc-options:
-    - -Wall
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - base
-    - unlam
-    - haskeline
-    - mtl
-    - recursion-schemes
+  pointkiller:
+    main: PointKiller.hs
+  eval-lam:
+    main: Evaluator.hs
+
 tests:
   unlam-test:
     main: Spec.hs
     source-dirs: test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - base
-    - unlam

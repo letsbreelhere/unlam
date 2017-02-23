@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 {-
 A fun exercise: read lambda calculus expressions and convert them to
 pointfree form in the SKI-calculus. Parsing (and output via Show) are written
@@ -21,13 +19,14 @@ module Main where
 
 import Control.Natural
 import Control.Monad.Trans (liftIO)
+import Control.Monad (replicateM)
 import Data.Functor.Foldable (Fix(..), cata)
 import System.Console.Haskeline (getInputLine)
 import qualified System.Console.Haskeline as Haskeline
 import Types
 import Parser
 
-removePoint :: Char -> LamWithSki -> LamWithSki
+removePoint :: String -> LamWithSki -> LamWithSki
 removePoint v =
   cata $
   \case
@@ -46,10 +45,10 @@ pointfree = cata $ \case
   Lam (Abs v e) -> removePoint v e
   lws -> Fix lws
 
--- Convert vars named c to c' and mark them.
-mark :: Char -> Char -> LamWithSki -> LamWithSki
-mark c c' = cata $ \case
-  Lam (Var v False) | v == c -> mkVar c' True
+-- Rename vars named c to c' and mark them.
+renameTo :: String -> String -> LamWithSki -> LamWithSki
+renameTo s s' = cata $ \case
+  Lam (Var v False) | v == s -> mkVar s' True
   expr -> Fix expr
 
 inject :: Lam' -> LamWithSki
@@ -65,8 +64,8 @@ alphaConvert' = cata $ \case
   (k, e) :<@> (m, e') -> (max k m, e <@> e')
   Ski s -> (0, mkSki (fmap snd s))
   Lam (Abs v (n, e)) -> do
-    let v' = ['a'..] !! n
-    let e' = mark v v' e
+    let v' = concatMap (flip replicateM ['a'..'z']) [1..] !! n
+    let e' = (v `renameTo` v') e
     (n+1, mkLam $ Abs v' e')
   Lam (Var v reduced) -> (0, mkVar v reduced)
 

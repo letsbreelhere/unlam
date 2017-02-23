@@ -1,6 +1,3 @@
-{-# LANGUAGE LambdaCase, RankNTypes, TypeOperators, DeriveFunctor
-  #-}
-
 module Control.Natural where
 
 import Types

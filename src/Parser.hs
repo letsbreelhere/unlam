@@ -2,7 +2,7 @@ module Parser where
 
 import Control.Applicative (Alternative(..))
 import Control.Arrow (first)
-import Control.Monad (guard)
+import Control.Monad (void, guard)
 import Data.Foldable (asum)
 import Types
 
@@ -25,6 +25,9 @@ instance Alternative Parser where
   empty = Parser (const Nothing)
   p <|> p' = Parser $ \s -> parse p s <|> parse p' s
 
+optional :: Parser a -> Parser (Maybe a)
+optional p = fmap Just p <|> pure Nothing
+
 char :: Char -> Parser Char
 char c = Parser $ \s -> do (x:xs) <- pure s
                            guard (x == c)
@@ -34,7 +37,7 @@ oneOf :: (Functor t, Foldable t) => t Char -> Parser Char
 oneOf = asum . fmap char
 
 skip :: (Functor f) => f a -> f ()
-skip = fmap (const ())
+skip = void
 
 spaces :: Parser ()
 spaces = skip . many $ oneOf [' ', '\n', '\t']
@@ -43,16 +46,19 @@ token :: Parser a -> Parser a
 token p = p <* spaces
 
 lam :: Parser Lam'
-lam = (var <$> parseVar) <|> parseAbstr <|> parseApp
+lam = spaces *> (parseVar <|> parseAbstr <|> parseApp)
 
-parseVar :: Parser Char
-parseVar = token . oneOf $ ['a'..'z'] ++ ['A'..'Z']
+parseVar :: Parser Lam'
+parseVar = fmap var (symbol '$' *> parseVarName)
+
+parseVarName :: Parser String
+parseVarName = token $ some . oneOf $ ['a'..'z'] ++ ['A'..'Z']
 
 symbol :: Char -> Parser Char
 symbol = token . char
 
 parseAbstr :: Parser Lam'
-parseAbstr = abstr <$> (symbol '^' *> parseVar) <*> (symbol '.' *> lam)
+parseAbstr = abstr <$> (symbol '^' *> parseVarName) <*> (symbol '.' *> lam)
 
 parseApp :: Parser Lam'
 parseApp = symbol '`' *> (app <$> lam <*> lam)

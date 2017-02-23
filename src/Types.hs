@@ -1,7 +1,3 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, FlexibleInstances,
-  RankNTypes, TypeOperators, LambdaCase, PatternSynonyms,
-  MultiParamTypeClasses, RankNTypes #-}
-
 module Types where
 
 import Data.Functor.Foldable (Fix(..), cata)
@@ -15,9 +11,9 @@ data App f =
    deriving (Functor, Foldable, Traversable)
 
 data Lam f
-  = Abs Char
+  = Abs String
         f
-  | Var Char
+  | Var String
         Bool
   deriving (Functor, Foldable, Traversable)
 
@@ -50,10 +46,10 @@ pattern Ski x = InL (InR x)
 app :: Lam' -> Lam' -> Lam'
 app l r = Fix (InL $ App l r)
 
-var :: Char -> Lam'
-var c = Fix (InR $ Var c False)
+var :: String -> Lam'
+var s = Fix (InR $ Var s False)
 
-abstr :: Char -> Lam' -> Lam'
+abstr :: String -> Lam' -> Lam'
 abstr v e = Fix (InR $ Abs v e)
 
 mkLam :: Lam LamWithSki -> LamWithSki
@@ -62,11 +58,11 @@ mkLam = Fix . InR
 mkSki :: Ski LamWithSki -> LamWithSki
 mkSki = Fix . InL . InR
 
-mkAbs :: Char -> LamWithSki -> LamWithSki
+mkAbs :: String -> LamWithSki -> LamWithSki
 mkAbs v e = mkLam $ Abs v e
 
-mkVar :: Char -> Bool -> LamWithSki
-mkVar c mark = mkLam (Var c mark)
+mkVar :: String -> Bool -> LamWithSki
+mkVar s mark = mkLam (Var s mark)
 
 (<@>) :: LamWithSki -> LamWithSki -> LamWithSki
 l <@> r = Fix . InL . InL $ l `App` r
@@ -83,6 +79,6 @@ showLamWithSki =
   cata $
   \case
     l :<@> r -> '`' : l ++ r
-    Lam (Var v _) -> [v]
-    Lam (Abs v e) -> '^' : v : '.' : e
+    Lam (Var v _) -> '$' : v
+    Lam (Abs v e) -> "^" ++ v ++ "." ++ e
     Ski s -> show s
